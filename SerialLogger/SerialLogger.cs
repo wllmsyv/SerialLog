@@ -288,6 +288,7 @@ namespace SerialLogger//SerialComTestForm
                     availableConnections.Enabled = false;
                     baudRateCB.Enabled = false;
                     fileNameTB.Enabled = false;
+                    setFilePath.Enabled = false;
                     //Open Flag
                     isOpen = true;
                     if (noLog.Checked)
