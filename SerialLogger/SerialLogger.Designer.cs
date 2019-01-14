@@ -75,6 +75,7 @@
             // 
             // availableConnections
             // 
+            this.availableConnections.Enabled = false;
             this.availableConnections.FormattingEnabled = true;
             this.availableConnections.Location = new System.Drawing.Point(37, 319);
             this.availableConnections.Name = "availableConnections";
@@ -204,6 +205,7 @@
             // 
             // baudRateCB
             // 
+            this.baudRateCB.Enabled = false;
             this.baudRateCB.FormattingEnabled = true;
             this.baudRateCB.Location = new System.Drawing.Point(37, 367);
             this.baudRateCB.Name = "baudRateCB";

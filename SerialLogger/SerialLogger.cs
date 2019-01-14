@@ -1,4 +1,29 @@
-﻿using System;
+﻿/*
+ * This works, but it's still a work in progress. 
+ * 
+ * Known Issues:
+ *  1: If updates are comming in faster than ~20ms the UI stops responding.
+ *  2: There is no exception handling for choosing the wrong, or unsupported
+ *  baud rate.
+ *  3: Not really an issue, but file compression hasn't been implemented yet.
+ * 
+ * 
+ * Usage:
+ *  1: Click Aquire to get available COM ports
+ *  2: Select COM port and Baud Rate. If logging is desired, set file location and name.
+ *  3: Click connect. Use the command window to transmit commands through the com port.
+ *  4: When logging is complete, click close to close the connection.
+ *  
+ * 
+ */
+
+
+
+
+
+
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -43,6 +68,7 @@ namespace SerialLogger//SerialComTestForm
             logCSV,
             logAndCompress
         }
+
         private enum connectionState
         {
             aquire,
@@ -63,6 +89,7 @@ namespace SerialLogger//SerialComTestForm
 
         private void SerialLogger_Load(object sender, EventArgs e)
         {
+            //initialize some variables.
             for (int i = 0; i < BAUDRATE.Length; i++)
             {
                 baudRateCB.Items.Add(BAUDRATE[i]);
@@ -71,11 +98,8 @@ namespace SerialLogger//SerialComTestForm
             baudRateCB.SelectedItem = BAUDRATE[0];
             this.myDelegate = new AddDataDelegate(addText);
             SerialPort1.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-
-
             isOpen = false;
             logState = loggingState.noLog;
-
             sb = new StringBuilder();
         }
 
@@ -95,7 +119,6 @@ namespace SerialLogger//SerialComTestForm
                 availableConnections.Items.Add(ports[i]);
             }
 
-
             if (ports.Length > 0)
             {
                 availableConnections.SelectedItem = ports[0];
@@ -109,7 +132,8 @@ namespace SerialLogger//SerialComTestForm
 
             com = availableConnections.Text;
             SerialPort1.PortName = com;
-            SerialPort1.BaudRate = _BAUDRATE[baudRateCB.Items.IndexOf(baudRateCB.Text)];
+            int baudRate_index = baudRateCB.Items.IndexOf(baudRateCB.Text);
+            SerialPort1.BaudRate = _BAUDRATE[baudRate_index];
             SerialPort1.Parity = System.IO.Ports.Parity.None;
             SerialPort1.DataBits = 8;
             SerialPort1.StopBits = System.IO.Ports.StopBits.One;
@@ -120,11 +144,28 @@ namespace SerialLogger//SerialComTestForm
             if (logState == loggingState.logCSV)
             {
                 file = new StreamWriter(filePathTB.Text + fileNameTB.Text);
+                file.WriteLine("TX\\RX,MM,dd,yyyy,hh,mm,ss,ms,msg");
             }
 
-            SerialPort1.Open();
-            SerialPort1.DiscardInBuffer();
-            SerialPort1.DiscardOutBuffer();
+            try
+            {
+                SerialPort1.Open();
+                SerialPort1.DiscardInBuffer();
+                SerialPort1.DiscardOutBuffer();
+            }
+            catch (UnauthorizedAccessException e1)
+            {
+                setFormState(connectionState.close);
+                communicationTraffic.Text = "Com Port: " + availableConnections.Text  +
+                                             " is unavailable.";
+            }
+            catch (ArgumentException e1)
+            {
+                setFormState(connectionState.close);
+                communicationTraffic.Text = "Com Port: " + availableConnections.Text  +
+                                             " does not exist.";
+            }
+
         }
 
 
@@ -152,7 +193,6 @@ namespace SerialLogger//SerialComTestForm
             {
                 if ((int)stringChars[stringChars.Length - 1] == 10 && stringChars.Length > 2)
                 {
-                    // + ":" + DateTime.Now.Millisecond.ToString() + ","
                     temp = "TX," + DateTime.Now.ToString("MM','dd','yyyy','hh','mm','ss") + "," + DateTime.Now.Millisecond.ToString() + "," + command.Text.Substring(0, command.Text.Length - 2) + Environment.NewLine;
                     if (logState == loggingState.logCSV)
                     {
@@ -315,6 +355,8 @@ namespace SerialLogger//SerialComTestForm
                     command.Enabled = false;
                     availableConnections.Items.Clear();
                     availableConnections.Text = "";
+                    availableConnections.Enabled = false;
+                    baudRateCB.Enabled = false;
                     break;
 
                 default:
